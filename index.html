@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="zh-CN" dir="ltr">
 	<head>
-		<title>WebGL Gaussian Splat Viewer</title>
+		<title>WebGL 高斯泼溅查看器</title>
 		<meta charset="utf-8" />
 		<meta
 			name="viewport"
@@ -161,6 +161,10 @@
 				top: 10px;
 				z-index: 999;
 				right: 10px;
+				display: flex; /* Added for layout */
+				align-items: center; /* Added for layout */
+				flex-direction: column; /* Align items vertically */
+				gap: 5px; /* Space between items */
 			}
 			#canvas {
 				display: block;
@@ -185,6 +189,39 @@
 			body.nohf #progress, body.nohf .cube-face {
 				background: #ff9d0d;
 			}
+			#upload-progress-container {
+				position: fixed; /* Changed to fixed for centering */
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%); /* Center the container */
+				width: 80%; /* Make it wider */
+				max-width: 400px; /* Max width */
+				height: 20px; /* Make it thicker */
+				background-color: rgba(85, 85, 85, 0.8); /* Darker background with some transparency */
+				border-radius: 10px; /* Rounded corners */
+				overflow: hidden;
+				display: none; /* Hidden by default */
+				z-index: 1000; /* Ensure it's on top */
+				border: 1px solid #fff; /* Add a border */
+			}
+			#upload-progress {
+				height: 100%;
+				width: 0%;
+				background-color: #4CAF50; /* Green progress color */
+				transition: width 0.1s ease-in-out, background-color 0.3s ease; /* Smooth transition for width and color */
+				border-radius: 8px; /* Match container's rounding slightly less */
+			}
+			/* Optional: Add a backdrop */
+			#upload-backdrop {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100vw;
+				height: 100vh;
+				background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+				z-index: 999; /* Below progress bar, above everything else */
+				display: none; /* Hidden by default */
+			}
 		</style>
 	</head>
 	<body>
@@ -192,55 +229,54 @@
 			if(location.host.includes('hf.space')) document.body.classList.add('nohf');
 		</script>
 		<div id="info">
-			<h3 class="nohf">WebGL 3D Gaussian Splat Viewer</h3>
+			<h3 class="nohf">WebGL 3D 高斯泼溅查看器</h3>
 			<p>
 			<small class="nohf">
-				By <a href="https://twitter.com/antimatter15">Kevin Kwok</a>.
-				Code on
-				<a href="https://github.com/antimatter15/splat">Github</a
-				>.
+				我们参考了<a href="https://github.com/antimatter15/splat">splat</a>这个项目的基础上，
+				添加了更便捷的操作与可视化功能。
 			</small>
 		</p>
 
 			<details>
-			<summary>Use mouse or arrow keys to navigate.</summary>
+			<summary>使用鼠标或键盘方向键进行导航。</summary>
 
-<div id="instructions">movement (arrow keys)
-- left/right arrow keys to strafe side to side
-- up/down arrow keys to move forward/back
-- space to jump
+<div id="instructions">移动 (方向键 &amp; Shift/空格键)
+- `左`/`右` 方向键：左右平移
+- `上`/`下` 方向键：前进/后退
+- `Shift` 键：向上移动
+- `空格` 键：向下移动
 
-camera angle (wasd)
-- a/d to turn camera left/right
-- w/s to tilt camera up/down
-- q/e to roll camera counterclockwise/clockwise
-- i/k and j/l to orbit
+相机视角 (WASD键)
+- `A`/`D` 键：左/右转动相机
+- `W`/`S` 键：上/下倾斜相机
+- `Q`/`E` 键：逆时针/顺时针滚动相机
+- `I`/`K` 和 `J`/`L` 键：环绕观察
 
-trackpad
-- scroll up/down/left/right to orbit
-- pinch to move forward/back
-- ctrl key + scroll to move forward/back
-- shift + scroll to move up/down or strafe
+触摸板
+- 上/下/左/右滚动：环绕观察
+- 双指捏合：前进/后退
+- `Ctrl` 键 + 滚动：前进/后退
+- `Shift` 键 + 滚动：向上/下移动或左右平移
 
-mouse
-- click and drag to orbit
-- right click (or ctrl/cmd key) and drag up/down to move
+鼠标
+- 点击并拖动：环绕观察
+- 右键点击 (或 `Ctrl`/`Cmd` 键) 并拖动：移动
 
-touch (mobile)
-- one finger to orbit
-- two finger pinch to move forward/back
-- two finger rotate to rotate camera clockwise/counterclockwise
-- two finger pan to move side-to-side and up-down
+触摸操作 (移动设备)
+- 单指操作：环绕观察
+- 双指捏合：前进/后退
+- 双指旋转：顺时针/逆时针旋转相机
+- 双指平移：左右和上下移动
 
-gamepad
-- if you have a game controller connected it should work
+游戏手柄
+- 如果连接了游戏手柄，应该可以使用
 
-other
-- press 0-9 to switch to one of the pre-loaded camera views
-- press '-' or '+'key to cycle loaded cameras
-- press p to resume default animation
-- drag and drop .ply file to convert to .splat
-- drag and drop cameras.json to load cameras
+其他
+- 按 `0-9` 数字键：切换到预加载的相机视角之一
+- 按 `-` 或 `+` 键：循环切换已加载的相机
+- 按 `P` 键：恢复默认动画
+- 拖放 `.ply` 文件：转换为 `.splat` 格式
+- 拖放 `cameras.json` 文件：加载相机视角
 </div>
 
 		</details>
@@ -269,8 +305,14 @@ other
 		<div id="quality">
 			<span id="fps"></span>
 		</div>
+		<div id="upload-backdrop"></div> <!-- Added backdrop element -->
 		<div id="caminfo">
-			<span id="camid"></span>
+			<span id="camid" style="margin-right: 10px;"></span>
+			<input type="file" id="fileInputPlySplat" accept=".ply,.splat" title="上传 .ply 或 .splat 文件">
+			<input type="file" id="fileInputJson" accept=".json" title="上传 cameras.json 文件">
+			<div id="upload-progress-container">
+				<div id="upload-progress"></div>
+			</div>
 		</div>
 		<script src="main.js"></script>
 	</body>

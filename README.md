@@ -1,82 +1,73 @@
-# splat
+# splat (中文版)
 
-This is a WebGL implementation of a real-time renderer for [3D Gaussian Splatting for Real-Time Radiance Field Rendering](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/), a recently developed technique for taking a set of pictures and generating a photorealistic navigable 3D scene out of it. As it is essentially an extension of rendering point clouds, rendering scenes generated with this technique can be done very efficiently on ordinary graphics hardware- unlike prior comparable techniques such as NeRFs.
+这是一个 WebGL 实现的实时渲染器，用于[3D 高斯泼溅的实时辐射场渲染](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/)。这是一种最近开发的技术，可以通过一组图片生成一个可导航的照片级真实感 3D 场景。由于它本质上是点云渲染的扩展，使用这种技术生成的场景可以在普通图形硬件上非常高效地渲染——这与之前的类似技术（如 NeRF）不同。
 
-You can [try it out here](https://antimatter15.com/splat/).
+如果你在浙大校园网内，你可以使用以下链接直接访问：
+- https://10.71.106.9:8000
 
-
-
-https://github.com/antimatter15/splat/assets/30054/878d5d34-e0a7-4336-85df-111ff22daf4b
-
+> 申明，本项目参考了[splat](https://github.com/antimatter15/splat)在此基础上做了一些更编写的操作。考虑后续作为js的实践添加更多加速功能，尽可能完善目前透明度渲染的问题。
 
 
-## controls
+## 控制说明
 
-movement (arrow keys)
+移动 (方向键 & Shift/空格键)
 
-- left/right arrow keys to strafe side to side
-- up/down arrow keys to move forward/back
-- `space` to jump
+- `左`/`右` 方向键：左右平移
+- `上`/`下` 方向键：前进/后退
+- `Shift` 键：向上移动
+- `空格` 键：向下移动
 
-camera angle (wasd)
+相机视角 (WASD键)
 
-- `a`/`d` to turn camera left/right
-- `w`/`s` to tilt camera up/down
-- `q`/`e` to roll camera counterclockwise/clockwise
-- `i`/`k` and `j`/`l` to orbit
+- `A`/`D` 键：左/右转动相机
+- `W`/`S` 键：上/下倾斜相机
+- `Q`/`E` 键：逆时针/顺时针滚动相机 (旋转幅度已减小)
+- `I`/`K` 和 `J`/`L` 键：环绕观察
 
-trackpad
-- scroll up/down to orbit down
-- scroll left/right to orbit left/right
-- pinch to move forward/back
-- ctrl key + scroll up/down to move forward/back
-- shift + scroll up/down to move up/down
-- shift + scroll left/right to strafe side to side
+触摸板
+- 上/下滚动：向下环绕观察
+- 左/右滚动：向左/右环绕观察
+- 双指捏合：前进/后退
+- `Ctrl` 键 + 上/下滚动：前进/后退
+- `Shift` 键 + 上/下滚动：向上/下移动
+- `Shift` 键 + 左/右滚动：左右平移
 
-mouse
-- click and drag to orbit
-- right click (or ctrl/cmd key) and drag up/down to move forward/back
-- right click (or ctrl/cmd key) and drag left/right to strafe side to side
+鼠标
+- 点击并拖动：环绕观察
+- 右键点击 (或 `Ctrl`/`Cmd` 键) 并上/下拖动：前进/后退
+- 右键点击 (或 `Ctrl`/`Cmd` 键) 并左/右拖动：左右平移
 
-touch (mobile)
-- one finger to orbit
-- two finger pinch to move forward/back
-- two finger rotate to rotate camera clockwise/counterclockwise
-- two finger pan to move side-to-side and up-down
+触摸操作 (移动设备)
+- 单指操作：环绕观察
+- 双指捏合：前进/后退
+- 双指旋转：顺时针/逆时针旋转相机
+- 双指平移：左右和上下移动
 
-other
-- press 0-9 to switch to one of the pre-loaded camera views
-- press '-' or '+'key to cycle loaded cameras
-- press `p` to resume default animation
-- drag and drop .ply file to convert to .splat
-- drag and drop cameras.json to load cameras
+其他
+- 按 `0-9` 数字键：切换到预加载的相机视角之一
+- 按 `-` 或 `+` 键：循环切换已加载的相机
+- 按 `P` 键：恢复默认动画
+- 拖放 `.ply` 文件：转换为 `.splat` 格式
+- 拖放 `cameras.json` 文件：加载相机视角
 
-## other features
+## 其他功能
 
-- press `v` to save the current view coordinates to the url
-- open custom `.splat` files by adding a `url` param to a CORS-enabled URL
-- drag and drop a `.ply` file which has been processed with the 3d gaussian splatting software onto the page and it will automatically convert the file to the `.splat` format
+- 按 `V` 键：将当前视图坐标保存到 URL 中
+- 通过向启用了 CORS 的 URL 添加 `url` 参数来打开自定义的 `.splat` 文件
+- 将使用 3D 高斯泼溅软件处理过的 `.ply` 文件拖放到页面上，它将自动将文件转换为 `.splat` 格式
 
-## examples
+## 示例
+使用`run.sh`即可开启你自己的服务器，或者直接使用`python -m http.server`命令开启一个简单的服务器。
 
-note that as long as your `.splat` file is hosted in a CORS-accessible way, you can open it with the `url` field. 
 
-- https://antimatter15.com/splat/?url=plush.splat#[0.95,0.19,-0.23,0,-0.16,0.98,0.12,0,0.24,-0.08,0.97,0,-0.33,-1.52,1.53,1]
-- https://antimatter15.com/splat/?url=truck.splat
-- https://antimatter15.com/splat/?url=garden.splat
-- https://antimatter15.com/splat/?url=treehill.splat
-- https://antimatter15.com/splat/?url=stump.splat#[-0.86,-0.23,0.45,0,0.27,0.54,0.8,0,-0.43,0.81,-0.4,0,0.92,-2.02,4.1,1]
-- https://antimatter15.com/splat/?url=bicycle.splat
-- https://antimatter15.com/splat/?url=https://media.reshot.ai/models/nike_next/model.splat#[0.95,0.16,-0.26,0,-0.16,0.99,0.01,0,0.26,0.03,0.97,0,0.01,-1.96,2.82,1]
 
-## notes
+## 注意事项
 
-- written in javascript with webgl 1.0 with no external dependencies, you can just hit view source and read the unminified code. webgl 2.0 doesn't really add any new features that aren't possible with webgl 1.0 with extensions. webgpu is apparently nice but still not very well supported outside of chromium.
-- we sorts splats by a combination of size and opacity and supports progressive loading so you can see and interact with the model without having all the splats loaded. 
-- does not currently support view dependent shading effects with spherical harmonics, this is primarily done to reduce the file size of the splat format so it can be loaded easily into web browsers. For third-order spherical harmonics we need 48 coefficients which is nearly 200 bytes per splat!
-- splat sorting is done asynchronously on the cpu in a webworker. it might be interesting to investigate performing the sort on the gpu with an implementation of bitonic or radix sorting, but it seems plausible to me that it'd be better to let the gpu focus rather than splitting its time between rendering and sorting.
-- earlier experiments used [stochastic transparency](https://research.nvidia.com/publication/2011-08_stochastic-transparency) which looked grainy, and [weighted blended order independent transparency](https://learnopengl.com/Guest-Articles/2020/OIT/Weighted-Blended) which didn't seem to work.
-
+- 使用 JavaScript 和 WebGL 1.0 编写，无外部依赖。你可以直接查看源代码阅读未压缩的代码。WebGL 2.0 并没有真正添加任何 WebGL 1.0 扩展无法实现的新功能。WebGPU 据说不错，但在 Chromium 之外的支持仍然不太好。
+- 我们通过结合大小和不透明度对 splat 进行排序，并支持渐进式加载，这样你可以在所有 splat 加载完成之前查看并与模型交互。
+- 目前不支持使用球谐函数实现视角相关的着色效果，这主要是为了减小 splat 格式的文件大小，以便可以轻松加载到 Web 浏览器中。对于三阶球谐函数，我们需要 48 个系数，每个 splat 几乎需要 200 字节！
+- Splat 排序是在 WebWorker 中的 CPU 上异步完成的。研究在 GPU 上使用位排序或基数排序实现排序可能会很有趣，但在我看来，让 GPU 专注于渲染而不是在渲染和排序之间分配时间可能更好。
+- 早期的实验使用了[随机透明度](https://research.nvidia.com/publication/2011-08_stochastic-transparency)（看起来有颗粒感）和[加权混合顺序无关透明度](https://learnopengl.com/Guest-Articles/2020/OIT/Weighted-Blended)（似乎不起作用）。
 
 ## words
 
@@ -107,4 +98,4 @@ the final approach that i settled on is to run the sorting process on the CPU in
 
 ## acknowledgements
 
-Thanks to Otavio Good for discussions on different approaches for [order independent transparency](https://en.wikipedia.org/wiki/Order-independent_transparency), Mikola Lysenko for [regl](http://regl.party/) and also for helpful advice about webgl and webgpu, Ethan Weber for discussions about how NeRFs work and letting me know that sorting is hard, Gray Crawford for identifying issues with color rendering and camera controls, Anna Brewer for help with implementing animations, and GPT-4 for writing all the WebGL boilerplate. 
+Thanks to Otavio Good for discussions on different approaches for [order independent transparency](https://en.wikipedia.org/wiki/Order-independent_transparency), Mikola Lysenko for [regl](http://regl.party/) and also for helpful advice about webgl and webgpu, Ethan Weber for discussions about how NeRFs work and letting me know that sorting is hard, Gray Crawford for identifying issues with color rendering and camera controls, Anna Brewer for help with implementing animations, and GPT-4 for writing all the WebGL boilerplate.

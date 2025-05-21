@@ -924,6 +924,12 @@ async function main() {
         // if (document.activeElement != document.body) return;
         carousel = false;
         if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
+
+        // Prevent default action for Space key to avoid triggering focused elements (like file inputs)
+        if (e.code === "Space") {
+            e.preventDefault();
+        }
+
         if (/\d/.test(e.key)) {
             currentCameraIndex = parseInt(e.key);
             camera = cameras[currentCameraIndex];
@@ -1167,6 +1173,10 @@ async function main() {
     let avgFps = 0;
     let start = 0;
 
+    const uploadProgressContainer = document.getElementById('upload-progress-container');
+    const uploadProgressBar = document.getElementById('upload-progress');
+    const uploadBackdrop = document.getElementById('upload-backdrop'); // Get backdrop element
+
     window.addEventListener("gamepadconnected", (e) => {
         const gp = navigator.getGamepads()[e.gamepad.index];
         console.log(
@@ -1186,35 +1196,42 @@ async function main() {
             activeKeys.includes("ShiftLeft") ||
             activeKeys.includes("ShiftRight");
 
+        // Z-axis movement (Forward/Backward)
         if (activeKeys.includes("ArrowUp")) {
-            if (shiftKey) {
-                inv = translate4(inv, 0, -0.03, 0);
-            } else {
-                inv = translate4(inv, 0, 0, 0.1);
-            }
+            // Original: if (shiftKey) { inv = translate4(inv, 0, -0.03, 0); } else { inv = translate4(inv, 0, 0, 0.1); }
+            inv = translate4(inv, 0, 0, 0.1); // Local FORWARD
         }
         if (activeKeys.includes("ArrowDown")) {
-            if (shiftKey) {
-                inv = translate4(inv, 0, 0.03, 0);
-            } else {
-                inv = translate4(inv, 0, 0, -0.1);
-            }
+            // Original: if (shiftKey) { inv = translate4(inv, 0, 0.03, 0); } else { inv = translate4(inv, 0, 0, -0.1); }
+            inv = translate4(inv, 0, 0, -0.1); // Local BACKWARD
         }
+
+        // X-axis movement (Left/Right)
         if (activeKeys.includes("ArrowLeft"))
-            inv = translate4(inv, -0.03, 0, 0);
+            inv = translate4(inv, -0.03, 0, 0); // Local LEFT
         //
         if (activeKeys.includes("ArrowRight"))
-            inv = translate4(inv, 0.03, 0, 0);
+            inv = translate4(inv, 0.03, 0, 0);  // Local RIGHT
+
+        // Y-axis movement (Up/Down)
+        if (shiftKey) { // Shift for UP
+            inv = translate4(inv, 0, 0.03, 0); // Local UP
+        }
+        if (activeKeys.includes("Space")) { // Space for DOWN
+            inv = translate4(inv, 0, -0.03, 0); // Local DOWN
+        }
+        
+        // Rotational movements
         // inv = rotate4(inv, 0.01, 0, 1, 0);
-        if (activeKeys.includes("KeyA")) inv = rotate4(inv, -0.01, 0, 1, 0);
-        if (activeKeys.includes("KeyD")) inv = rotate4(inv, 0.01, 0, 1, 0);
-        if (activeKeys.includes("KeyQ")) inv = rotate4(inv, 0.01, 0, 0, 1);
-        if (activeKeys.includes("KeyE")) inv = rotate4(inv, -0.01, 0, 0, 1);
-        if (activeKeys.includes("KeyW")) inv = rotate4(inv, 0.005, 1, 0, 0);
-        if (activeKeys.includes("KeyS")) inv = rotate4(inv, -0.005, 1, 0, 0);
+        if (activeKeys.includes("KeyA")) inv = rotate4(inv, -0.01, 0, 1, 0); // Yaw Left
+        if (activeKeys.includes("KeyD")) inv = rotate4(inv, 0.01, 0, 1, 0);  // Yaw Right
+        if (activeKeys.includes("KeyQ")) inv = rotate4(inv, 0.005, 0, 0, 1);  // Roll Left (reduced from 0.01)
+        if (activeKeys.includes("KeyE")) inv = rotate4(inv, -0.005, 0, 0, 1); // Roll Right (reduced from -0.01)
+        if (activeKeys.includes("KeyW")) inv = rotate4(inv, 0.005, 1, 0, 0); // Pitch Up
+        if (activeKeys.includes("KeyS")) inv = rotate4(inv, -0.005, 1, 0, 0); // Pitch Down
 
         const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-        let isJumping = activeKeys.includes("Space");
+        let isJumping = false; // Keyboard jump via Space is removed; gamepad can still trigger jump.
         for (let gamepad of gamepads) {
             if (!gamepad) continue;
 
@@ -1388,7 +1405,57 @@ async function main() {
         splatData[3] == 10;
 
     const selectFile = (file) => {
+        // Reset state for the new file
+        stopLoading = true; // Stop any ongoing streaming download
+        vertexCount = 0; // This will trigger the spinner in the render loop
+        splatData = new Uint8Array(0); // Clear existing splat data
+
+        document.getElementById("spinner").style.display = ""; // Show spinner
+        const mainProgress = document.getElementById("progress");
+        mainProgress.style.display = "block"; // Ensure it's visible if it was hidden
+        mainProgress.style.width = "0%"; // Reset main progress bar
+
         const fr = new FileReader();
+        
+        uploadBackdrop.style.display = 'block'; // Show backdrop
+        uploadProgressContainer.style.display = 'block';
+        uploadProgressBar.style.width = '0%';
+        uploadProgressBar.style.backgroundColor = '#4CAF50'; // Reset to green
+
+        fr.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percentLoaded = Math.round((e.loaded / e.total) * 100);
+                uploadProgressBar.style.width = percentLoaded + '%';
+            }
+        };
+
+        fr.onloadstart = () => {
+            uploadProgressBar.style.width = '0%';
+            uploadProgressContainer.style.display = 'block';
+            uploadBackdrop.style.display = 'block'; // Ensure backdrop is visible
+        };
+
+        fr.onloadend = () => {
+            // Keep progress at 100% for a moment then hide
+            uploadProgressBar.style.width = '100%';
+            setTimeout(() => {
+                uploadProgressContainer.style.display = 'none';
+                uploadBackdrop.style.display = 'none'; // Hide backdrop
+            }, 500);
+        };
+        
+        fr.onerror = () => {
+            console.error("Error reading file.");
+            uploadProgressBar.style.backgroundColor = '#F44336'; // Red for error
+            uploadProgressBar.style.width = '100%'; // Show full bar for error indication
+            // Keep backdrop and progress bar visible for a bit longer on error
+            setTimeout(() => {
+                uploadProgressContainer.style.display = 'none';
+                uploadBackdrop.style.display = 'none'; // Hide backdrop
+            }, 2000);
+            document.getElementById("message").innerText = "Error reading file.";
+        };
+
         if (/\.json$/i.test(file.name)) {
             fr.onload = () => {
                 cameras = JSON.parse(fr.result);
@@ -1408,7 +1475,8 @@ async function main() {
             stopLoading = true;
             fr.onload = () => {
                 splatData = new Uint8Array(fr.result);
-                console.log("Loaded", Math.floor(splatData.length / rowLength));
+                console.log("Loaded", file.name, Math.floor(splatData.length / rowLength) + " splats");
+                // uploadProgressBar.style.width = '100%'; // Handled by onloadend
 
                 if (isPly(splatData)) {
                     // ply file magic header means it should be handled differently
@@ -1426,8 +1494,9 @@ async function main() {
 
     window.addEventListener("hashchange", (e) => {
         try {
+            // When hash changes (e.g. loading a saved view), reset carousel
+            carousel = false; 
             viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));
-            carousel = false;
         } catch (err) {}
     });
 
@@ -1441,8 +1510,34 @@ async function main() {
     document.addEventListener("drop", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        selectFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            selectFile(e.dataTransfer.files[0]);
+        }
     });
+
+    // Listen for file input changes
+    // Ensure these IDs match your HTML: fileInputPlySplat and fileInputJson
+    const fileInputPlySplat = document.getElementById('fileInputPlySplat');
+    if (fileInputPlySplat) {
+        fileInputPlySplat.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                selectFile(e.target.files[0]);
+                e.target.value = null; // Reset file input
+                e.target.blur(); // Remove focus from the input element
+            }
+        });
+    }
+
+    const fileInputJson = document.getElementById('fileInputJson');
+    if (fileInputJson) {
+        fileInputJson.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                selectFile(e.target.files[0]);
+                e.target.value = null; // Reset file input
+                e.target.blur(); // Remove focus from the input element
+            }
+        });
+    }
 
     let bytesRead = 0;
     let lastVertexCount = -1;
@@ -1468,9 +1563,10 @@ async function main() {
     if (!stopLoading) {
         if (isPly(splatData)) {
             // ply file magic header means it should be handled differently
-            worker.postMessage({ ply: splatData.buffer, save: false });
+            worker.postMessage({ ply: splatData: splatData.buffer, save: false });
         } else {
             worker.postMessage({
+
                 buffer: splatData.buffer,
                 vertexCount: Math.floor(bytesRead / rowLength),
             });
