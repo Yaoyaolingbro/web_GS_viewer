@@ -3,7 +3,7 @@
 这是一个 WebGL 实现的实时渲染器，用于[3D 高斯泼溅的实时辐射场渲染](https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/)。这是一种最近开发的技术，可以通过一组图片生成一个可导航的照片级真实感 3D 场景。由于它本质上是点云渲染的扩展，使用这种技术生成的场景可以在普通图形硬件上非常高效地渲染——这与之前的类似技术（如 NeRF）不同。
 
 如果你在浙大校园网内，你可以使用以下链接直接访问：
-- https://10.71.106.9:8000
+- https://10.71.106.9:1897
 
 > 申明，本项目参考了[splat](https://github.com/antimatter15/splat)在此基础上做了一些更编写的操作。考虑后续作为js的实践添加更多加速功能，尽可能完善目前透明度渲染的问题。
 
@@ -57,7 +57,8 @@
 - 将使用 3D 高斯泼溅软件处理过的 `.ply` 文件拖放到页面上，它将自动将文件转换为 `.splat` 格式
 
 ## 示例
-使用`run.sh`即可开启你自己的服务器，或者直接使用`python -m http.server`命令开启一个简单的服务器。
+使用`run.sh`即可开启你自己的服务器，或者直接使用`python -m http.server`命令开启一个简单的服务器。（默认端口8000）
+
 
 
 
@@ -95,6 +96,24 @@ another interesting approach is something called [weighted blended order indepen
 
 the final approach that i settled on is to run the sorting process on the CPU in a webworker, which happens a bit more slowly (at roughly 4fps whereas the main render is at 60fps), but that's fine because most of the time when you are moving around the z order doesn't actually change very fast (this results in momentary artifacts when jumping directly between different camera orientations on opposite sides). 
 
+
+## 本地运行和文件处理说明
+
+当您使用 `python -m http.server` 或类似的简单静态服务器在本地运行此查看器时，请注意以下几点：
+
+1.  **服务器角色**：`python -m http.server` 仅用于提供查看器应用文件（HTML, JavaScript, CSS）以及您希望在本地查看的 3D 模型文件（例如 `.splat` 文件）。
+2.  **无服务器端上传**：此简单的 Python 服务器**不支持**将文件上传并保存到服务器的功能。
+3.  **客户端文件处理**：
+    *   查看器中的“文件上传”功能（例如，通过拖放或点击上传按钮选择文件）完全在您的**浏览器内部（客户端）**进行处理。
+    *   `.splat` 文件会直接在浏览器中加载以供查看。
+    *   `.ply` 文件会在浏览器中被转换为 `.splat` 格式，然后加载。转换后的 `.splat` 文件通常会提示您下载保存到本地。
+    *   `cameras.json` 文件用于在浏览器中加载和切换相机视角。
+    *   这些文件内容不会发送到您本地运行的 `python -m http.server`。
+4.  **加载本地 `.splat` 文件**：
+    *   要查看存放在本地并通过 `python -m http.server` 提供的 `.splat` 文件（例如，名为 `my_model.splat` 的文件与 `index.html` 在同一目录下）：
+    *   确保该 `.splat` 文件位于您启动 `python -m http.server` 的目录中。
+    *   在浏览器中访问查看器时，需要通过 `url` 查询参数指定该文件的**完整URL**。例如：`http://localhost:8000/?url=http://localhost:8000/my_model.splat`。
+    *   请将 `http://localhost:8000` 替换为您服务器的实际地址和端口。如果您的模型文件名为 `train.splat` 且与 `index.html` 在同一目录，则可以使用 `http://localhost:8000/?url=train.splat` （浏览器会自动将其解析为相对于当前页面的路径，但更可靠的做法是提供完整路径）。
 
 ## acknowledgements
 

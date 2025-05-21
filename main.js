@@ -1563,7 +1563,7 @@ async function main() {
     if (!stopLoading) {
         if (isPly(splatData)) {
             // ply file magic header means it should be handled differently
-            worker.postMessage({ ply: splatData: splatData.buffer, save: false });
+            worker.postMessage({ ply: splatData.buffer, save: false });
         } else {
             worker.postMessage({
 
